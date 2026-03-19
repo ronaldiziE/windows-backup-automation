@@ -1,4 +1,4 @@
-windows-backup-automation/
+windows-backup-automation
 │
 ├── scripts/
 │   └── backup.ps1
@@ -7,3 +7,4 @@ windows-backup-automation/
 │   └── backup.log
 │
 ├── README.md
+└── LICENSE
