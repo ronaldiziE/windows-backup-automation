@@ -54,3 +54,40 @@ Add-Content $logFile "Fim do backup"
 Get-ChildItem $destination -Directory |
 Where-Object { $_.CreationTime -lt (Get-Date).AddDays(-7) } |
 Remove-Item -Recurse -Force
+Get-ChildItem $destination -Directory |
+Where-Object { $_.CreationTime -lt (Get-Date).AddDays(-7) } |
+Remove-Item -Recurse -Force
+
+if (!(Test-Path $destination)) {
+    Add-Content $logFile "Servidor não acessível"
+    exit
+}
+
+# ================================
+# FUNÇÃO DE LOG
+# ================================
+function Write-Log {
+    param (
+        [string]$Message,
+        [string]$Level = "INFO"
+    )
+
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $logEntry = "[$timestamp] [$Level] $Message"
+
+    Add-Content -Path $logFile -Value $logEntry
+
+    # Exibir no console
+    if ($Level -eq "ERROR") {
+        Write-Host $logEntry -ForegroundColor Red
+    }
+    elseif ($Level -eq "WARNING") {
+        Write-Host $logEntry -ForegroundColor Yellow
+    }
+    else {
+        Write-Host $logEntry -ForegroundColor Green
+    }
+}
+
+Add-Type -AssemblyName PresentationFramework
+[System.Windows.MessageBox]::Show("Backup concluído com sucesso")
