@@ -35,6 +35,7 @@ robocopy $source $destFolder `
 /XO `
 /R:3 `
 /W:5 `
+/MT:8 `
 /XD "AppData" "Temp" "Cache" `
 /LOG+:$logFile
 
