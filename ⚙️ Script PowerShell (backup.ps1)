@@ -48,3 +48,8 @@ if ($LASTEXITCODE -le 3) {
 }
 
 Add-Content $logFile "Fim do backup"
+
+# Remover backups com mais de 7 dias
+Get-ChildItem $destination -Directory |
+Where-Object { $_.CreationTime -lt (Get-Date).AddDays(-7) } |
+Remove-Item -Recurse -Force
