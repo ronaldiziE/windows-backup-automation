@@ -1,18 +1,21 @@
-# CONFIG
 $source = "C:\Users"
 $destination = "\\SERVIDOR\Backup"
 $date = Get-Date -Format "yyyy-MM-dd_HH-mm"
 $logFile = "C:\Backup\logs\backup.log"
 
-# CRIA PASTA DE DESTINO
 $destFolder = "$destination\Backup_$date"
-New-Item -ItemType Directory -Path $destFolder -Force
 
-# EXECUTA BACKUP
-try {
-    robocopy $source $destFolder /E /Z /R:3 /W:5 /LOG:$logFile
-    Add-Content $logFile "[$date] Backup realizado com sucesso"
+# Criar pasta destino
+if (!(Test-Path $destFolder)) {
+    New-Item -ItemType Directory -Path $destFolder
 }
-catch {
-    Add-Content $logFile "[$date] Erro no backup"
+
+# Executar backup
+robocopy $source $destFolder /E /Z /R:3 /W:5 /LOG+:$logFile
+
+# Log
+if ($LASTEXITCODE -le 3) {
+    Add-Content $logFile "[$date] Backup OK"
+} else {
+    Add-Content $logFile "[$date] ERRO no backup"
 }
