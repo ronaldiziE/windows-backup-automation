@@ -1,0 +1,9 @@
+windows-backup-automation/
+│
+├── scripts/
+│   └── backup.ps1
+│
+├── logs/
+│   └── backup.log
+│
+├── README.md
