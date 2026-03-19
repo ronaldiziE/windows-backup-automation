@@ -1,34 +1,81 @@
-# ================================
-# CONFIGURAÇÃO
-# ================================
-$source = "C:\Users"
-$destination = "\\SERVIDOR\Backup"
-$logDir = "C:\Backup\logs"
-$date = Get-Date -Format "yyyy-MM-dd_HH-mm"
-$logFile = "$logDir\backup.log"
+# ============================================
+# CONFIGURAÇÕES
+# ============================================
 
-# ================================
-# PREPARAÇÃO
-# ================================
+$source      = "C:\Users\Public\Documents"     # Origem
+$destination = "\\Servidor\Backup"             # Destino (rede)
+$logDir      = "C:\BackupLogs"                 # Pasta de logs
+$retentionDays = 7                             # Dias para retenção
+$enablePopup = $true                           # Ativar alerta visual
+
+# Criar pasta de log se não existir
 if (!(Test-Path $logDir)) {
-    New-Item -ItemType Directory -Path $logDir -Force
+    New-Item -ItemType Directory -Path $logDir | Out-Null
 }
 
-$destFolder = "$destination\Backup_$date"
+$logFile = Join-Path $logDir "backup.log"
 
-if (!(Test-Path $destFolder)) {
-    New-Item -ItemType Directory -Path $destFolder -Force
+# Timestamp para pasta de backup
+$timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
+$destFolder = Join-Path $destination $timestamp
+
+# ============================================
+# FUNÇÃO DE LOG
+# ============================================
+
+function Write-Log {
+    param (
+        [string]$Message,
+        [string]$Level = "INFO"
+    )
+
+    $timestampLog = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $logEntry = "[$timestampLog] [$Level] $Message"
+
+    Add-Content -Path $logFile -Value $logEntry
+
+    switch ($Level) {
+        "ERROR"   { Write-Host $logEntry -ForegroundColor Red }
+        "WARNING" { Write-Host $logEntry -ForegroundColor Yellow }
+        default   { Write-Host $logEntry -ForegroundColor Green }
+    }
 }
 
-# ================================
-# INÍCIO DO LOG
-# ================================
-Add-Content $logFile "==============================="
-Add-Content $logFile "Início do backup: $date"
+# ============================================
+# INÍCIO
+# ============================================
 
-# ================================
-# EXECUÇÃO DO BACKUP
-# ================================
+Write-Log "=============================="
+Write-Log "Iniciando rotina de backup"
+
+# Validar origem
+if (!(Test-Path $source)) {
+    Write-Log "Origem não encontrada: $source" "ERROR"
+    exit 1
+}
+
+# Validar destino (rede)
+if (!(Test-Path $destination)) {
+    Write-Log "Destino não acessível: $destination" "ERROR"
+    exit 2
+}
+
+# Criar pasta de destino com timestamp
+try {
+    New-Item -ItemType Directory -Path $destFolder -Force | Out-Null
+    Write-Log "Pasta criada: $destFolder"
+}
+catch {
+    Write-Log "Erro ao criar pasta de destino" "ERROR"
+    exit 3
+}
+
+# ============================================
+# EXECUÇÃO DO BACKUP (ROBOCOPY)
+# ============================================
+
+Write-Log "Executando Robocopy..."
+
 robocopy $source $destFolder `
 /E `
 /Z `
@@ -39,55 +86,51 @@ robocopy $source $destFolder `
 /XD "AppData" "Temp" "Cache" `
 /LOG+:$logFile
 
-# ================================
-# VALIDAÇÃO
-# ================================
+# ============================================
+# VALIDAÇÃO RESULTADO
+# ============================================
+
 if ($LASTEXITCODE -le 3) {
-    Add-Content $logFile "[$date] Backup concluído com sucesso"
-} else {
-    Add-Content $logFile "[$date] ERRO no backup - código $LASTEXITCODE"
+    Write-Log "Backup concluído com sucesso"
+}
+else {
+    Write-Log "Erro no backup. Código: $LASTEXITCODE" "ERROR"
+
+    if ($enablePopup) {
+        Add-Type -AssemblyName PresentationFramework
+        [System.Windows.MessageBox]::Show("Erro no backup! Verifique o log.")
+    }
+
+    exit 4
 }
 
-Add-Content $logFile "Fim do backup"
+# ============================================
+# LIMPEZA (RETENÇÃO)
+# ============================================
 
-# Remover backups com mais de 7 dias
-Get-ChildItem $destination -Directory |
-Where-Object { $_.CreationTime -lt (Get-Date).AddDays(-7) } |
-Remove-Item -Recurse -Force
-Get-ChildItem $destination -Directory |
-Where-Object { $_.CreationTime -lt (Get-Date).AddDays(-7) } |
-Remove-Item -Recurse -Force
+Write-Log "Aplicando política de retenção ($retentionDays dias)..."
 
-if (!(Test-Path $destination)) {
-    Add-Content $logFile "Servidor não acessível"
-    exit
-}
-
-# ================================
-# FUNÇÃO DE LOG
-# ================================
-function Write-Log {
-    param (
-        [string]$Message,
-        [string]$Level = "INFO"
-    )
-
-    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $logEntry = "[$timestamp] [$Level] $Message"
-
-    Add-Content -Path $logFile -Value $logEntry
-
-    # Exibir no console
-    if ($Level -eq "ERROR") {
-        Write-Host $logEntry -ForegroundColor Red
-    }
-    elseif ($Level -eq "WARNING") {
-        Write-Host $logEntry -ForegroundColor Yellow
-    }
-    else {
-        Write-Host $logEntry -ForegroundColor Green
+try {
+    Get-ChildItem $destination -Directory |
+    Where-Object { $_.CreationTime -lt (Get-Date).AddDays(-$retentionDays) } |
+    ForEach-Object {
+        Remove-Item $_.FullName -Recurse -Force
+        Write-Log "Removido backup antigo: $($_.FullName)" "WARNING"
     }
 }
+catch {
+    Write-Log "Erro na limpeza de backups antigos" "WARNING"
+}
 
-Add-Type -AssemblyName PresentationFramework
-[System.Windows.MessageBox]::Show("Backup concluído com sucesso")
+# ============================================
+# FINALIZAÇÃO
+# ============================================
+
+Write-Log "Rotina finalizada com sucesso"
+Write-Log "=============================="
+
+# Alerta de sucesso (opcional)
+if ($enablePopup) {
+    Add-Type -AssemblyName PresentationFramework
+    [System.Windows.MessageBox]::Show("Backup concluído com sucesso!")
+}
