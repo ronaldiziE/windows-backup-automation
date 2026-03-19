@@ -1,17 +1,20 @@
 # Windows Backup Automation
 
-Script em PowerShell para automação de backup em ambientes Windows, com foco em simplicidade, confiabilidade e uso corporativo.
+Automação de backup em ambiente Windows utilizando PowerShell e Robocopy.
+
+## 📌 Objetivo
+
+Automatizar a cópia de arquivos locais para um servidor de rede, garantindo integridade dos dados e facilidade de recuperação.
 
 ## 🚀 Funcionalidades
 
-- Backup automatizado de diretórios locais
-- Cópia para servidor de rede (SMB)
-- Criação de pastas com timestamp
-- Logs detalhados de execução
-- Tratamento de erros (ex: servidor indisponível)
-- Execução via Agendador de Tarefas
+- Backup automatizado de diretórios
+- Cópia para servidor (rede)
+- Criação de logs
+- Validação de destino
+- Tratamento de erros
 
-## 🛠️ Tecnologias utilizadas
+## 🛠️ Tecnologias
 
 - PowerShell
 - Robocopy
@@ -20,20 +23,9 @@ Script em PowerShell para automação de backup em ambientes Windows, com foco e
 ## 📂 Estrutura
 
 - `backup.ps1` → Script principal
-- `logs/` → Registro das execuções
-- `backup/` → Destino dos backups
+- `logs/` → Arquivos de log
 
-## ⚙️ Como funciona
+## ⚙️ Execução
 
-O script realiza a cópia incremental utilizando Robocopy, garantindo eficiência e evitando duplicação desnecessária de arquivos.
-
-## 🎯 Objetivo
-
-Demonstrar automação de rotinas administrativas em ambientes Windows, simulando cenários reais de infraestrutura de TI.
-
-## 🔒 Boas práticas aplicadas
-
-- Logging estruturado
-- Validação de destino
-- Controle de falhas
-- Organização por data
+```powershell
+.\backup.ps1
