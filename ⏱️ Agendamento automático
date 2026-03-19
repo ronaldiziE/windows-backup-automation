@@ -1,0 +1,1 @@
+schtasks /create /tn "BackupAutomatico" /tr "powershell.exe -ExecutionPolicy Bypass -File C:\Backup\scripts\backup.ps1" /sc daily /st 18:00
