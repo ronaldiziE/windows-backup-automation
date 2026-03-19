@@ -1,21 +1,50 @@
+# ================================
+# CONFIGURAÇÃO
+# ================================
 $source = "C:\Users"
 $destination = "\\SERVIDOR\Backup"
+$logDir = "C:\Backup\logs"
 $date = Get-Date -Format "yyyy-MM-dd_HH-mm"
-$logFile = "C:\Backup\logs\backup.log"
+$logFile = "$logDir\backup.log"
+
+# ================================
+# PREPARAÇÃO
+# ================================
+if (!(Test-Path $logDir)) {
+    New-Item -ItemType Directory -Path $logDir -Force
+}
 
 $destFolder = "$destination\Backup_$date"
 
-# Criar pasta destino
 if (!(Test-Path $destFolder)) {
-    New-Item -ItemType Directory -Path $destFolder
+    New-Item -ItemType Directory -Path $destFolder -Force
 }
 
-# Executar backup
-robocopy $source $destFolder /E /Z /R:3 /W:5 /LOG+:$logFile
+# ================================
+# INÍCIO DO LOG
+# ================================
+Add-Content $logFile "==============================="
+Add-Content $logFile "Início do backup: $date"
 
-# Log
+# ================================
+# EXECUÇÃO DO BACKUP
+# ================================
+robocopy $source $destFolder `
+/E `
+/Z `
+/XO `
+/R:3 `
+/W:5 `
+/XD "AppData" "Temp" "Cache" `
+/LOG+:$logFile
+
+# ================================
+# VALIDAÇÃO
+# ================================
 if ($LASTEXITCODE -le 3) {
-    Add-Content $logFile "[$date] Backup OK"
+    Add-Content $logFile "[$date] Backup concluído com sucesso"
 } else {
-    Add-Content $logFile "[$date] ERRO no backup"
+    Add-Content $logFile "[$date] ERRO no backup - código $LASTEXITCODE"
 }
+
+Add-Content $logFile "Fim do backup"
