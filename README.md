@@ -37,3 +37,11 @@ schtasks /create /tn "BackupAutomatico" /tr "powershell.exe -ExecutionPolicy Byp
 - PowerShell
 - Robocopy
 - Windows Task Scheduler
+
+- ## 🔐 Boas práticas aplicadas
+
+- Backup incremental
+- Exclusão de diretórios desnecessários
+- Logs detalhados
+- Tratamento de erro
+- Preparado para ambiente corporativo
